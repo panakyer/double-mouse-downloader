@@ -26,15 +26,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.branch }}
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version: '18'
           cache: 'npm'
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Set version
-        run: npm version ${{ inputs.version }} --no-git-tag-version
+        run: npm pkg set version=${{ inputs.version }}
 
       - name: Install dependencies
         run: npm install
