@@ -38,7 +38,7 @@ jobs:
           FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Set version
-        run: npm version ${{ inputs.version }} --no-git-tag-version
+        run: npm pkg set version=${{ inputs.version }}
 
       - name: Install dependencies
         run: npm install
