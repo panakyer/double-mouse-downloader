@@ -29,8 +29,8 @@ const LoginWindow: React.FC<LoginWindowProps> = () => {
     return resp;
   });
   const qrCodeLoginStatusRequest = useRequest(
-    async (oauthKey: string) => {
-      const resp = await jsBridge.bilibili.getLoginQrCodeStatus(oauthKey);
+    async (qrcodeKey: string) => {
+      const resp = await jsBridge.bilibili.getLoginQrCodeStatus(qrcodeKey);
       return resp;
     },
     {
@@ -57,12 +57,12 @@ const LoginWindow: React.FC<LoginWindowProps> = () => {
         return;
 
       const data = qrCodeLoginRequest.data;
-      const oauthKey: string = data.data.oauthKey;
-      const resp = await qrCodeLoginStatusRequest.runAsync(oauthKey);
-      if (resp.data === -2) {
+      const qrcodeKey: string = data.data.qrcode_key;
+      const resp = await qrCodeLoginStatusRequest.runAsync(qrcodeKey);
+      if (resp.data?.code === 86038) {
         // 二维码过期
         qrCodeLoginRequest.refresh();
-      } else if (resp.status) {
+      } else if (resp.data?.code === 0) {
         // 登录成功
         onLoginSuccess();
         clearQrCodeLoginStatusRequestInterval();
