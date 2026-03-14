@@ -5,6 +5,58 @@ import crypto from 'crypto';
 import GeetestCaptcha from '../../types/models/GeetestCaptcha';
 import configService from './config-service';
 
+// WBI 签名机制（参考：https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/misc/sign/wbi.md）
+const MIXIN_KEY_ENC_TAB = [
+  46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35, 27, 43, 5, 49,
+  33, 9, 42, 19, 29, 28, 14, 39, 12, 38, 41, 13, 37, 48, 7, 16, 24, 55, 40,
+  61, 26, 17, 0, 1, 60, 51, 30, 4, 22, 25, 54, 21, 56, 59, 6, 63, 57, 62, 11,
+  36, 20, 34, 44, 52,
+];
+
+let wbiKeyCache: { mixinKey: string; day: number } | null = null;
+
+async function getWbiMixinKey(): Promise<string> {
+  const today = Math.floor(Date.now() / 86400000);
+  if (wbiKeyCache && wbiKeyCache.day === today) {
+    return wbiKeyCache.mixinKey;
+  }
+
+  const axios = await getAxiosInstance();
+  const nav: any = (
+    await axios('https://api.bilibili.com/x/web-interface/nav')
+  ).data;
+  const imgKey: string = nav.data.wbi_img.img_url
+    .split('/')
+    .pop()
+    .replace(/\.\w+$/, '');
+  const subKey: string = nav.data.wbi_img.sub_url
+    .split('/')
+    .pop()
+    .replace(/\.\w+$/, '');
+  const rawWbiKey = imgKey + subKey;
+  const mixinKey = MIXIN_KEY_ENC_TAB.map((i) => rawWbiKey[i])
+    .join('')
+    .slice(0, 32);
+
+  wbiKeyCache = { mixinKey, day: today };
+  return mixinKey;
+}
+
+async function signWbi(params: Record<string, any>): Promise<Record<string, any>> {
+  const mixinKey = await getWbiMixinKey();
+  const wts = Math.floor(Date.now() / 1000);
+  const signed: Record<string, any> = { ...params, wts };
+  const query = Object.keys(signed)
+    .sort()
+    .map((key) => {
+      const val = String(signed[key]).replace(/[!'()*]/g, '');
+      return `${encodeURIComponent(key)}=${encodeURIComponent(val)}`;
+    })
+    .join('&');
+  const wRid = crypto.createHash('md5').update(query + mixinKey).digest('hex');
+  return { ...signed, w_rid: wRid };
+}
+
 async function getCSRF() {
   const config = await configService.fns.getAll();
   const tmp = `; ${config.cookieString}`.split('; bili_jct=').pop();
@@ -17,10 +69,8 @@ const fns = {
   async getVideoInfo(bvid: string): Promise<any> {
     const axios = await getAxiosInstance();
     return (
-      await axios.get('https://api.bilibili.com/x/web-interface/view', {
-        params: {
-          bvid,
-        },
+      await axios.get('https://api.bilibili.com/x/web-interface/wbi/view', {
+        params: await signWbi({ bvid }),
       })
     ).data as any;
   },
@@ -28,15 +78,15 @@ const fns = {
   async getVideoPlayUrl(bvid: string, cid: string): Promise<any> {
     const axios = await getAxiosInstance();
     return (
-      await axios.get('https://api.bilibili.com/x/player/playurl', {
-        params: {
+      await axios.get('https://api.bilibili.com/x/player/wbi/playurl', {
+        params: await signWbi({
           cid,
           bvid,
           fourk: 1,
           otype: 'json',
           fnver: 0,
-          fnval: 976,
-        },
+          fnval: 4048,
+        }),
       })
     ).data;
   },
@@ -118,27 +168,27 @@ const fns = {
 
   async getLoginQrCode() {
     const axios = await getAxiosInstance();
-    return (await axios('https://passport.bilibili.com/qrcode/getLoginUrl'))
-      .data;
+    return (
+      await axios(
+        'https://passport.bilibili.com/x/passport-login/web/qrcode/generate'
+      )
+    ).data;
   },
 
-  async getLoginQrCodeStatus(oauthKey: string) {
-    const got = await getAxiosInstance();
+  async getLoginQrCodeStatus(qrcodeKey: string) {
+    const axios = await getAxiosInstance();
     const resp: any = (
-      await got.post(
-        'https://passport.bilibili.com/qrcode/getLoginInfo',
-        new URLSearchParams({
-          oauthKey,
-        }).toString(),
+      await axios(
+        'https://passport.bilibili.com/x/passport-login/web/qrcode/poll',
         {
-          headers: {
-            'content-type': 'application/x-www-form-urlencoded',
+          params: {
+            qrcode_key: qrcodeKey,
           },
         }
       )
     ).data;
 
-    if (resp.status) {
+    if (resp.data?.code === 0) {
       // 登录成功，更新配置
       configService.fns.set(
         'cookieString',
@@ -272,6 +322,21 @@ const fns = {
       await axios(url, {
         params: {
           ep_id: episodeId,
+        },
+      })
+    ).data;
+  },
+
+  async getBangumiPlayUrl(epId: number, cid: number): Promise<any> {
+    const axios = await getAxiosInstance();
+    return (
+      await axios('https://api.bilibili.com/pgc/player/web/playurl', {
+        params: {
+          ep_id: epId,
+          cid,
+          fourk: 1,
+          fnver: 0,
+          fnval: 4048,
         },
       })
     ).data;

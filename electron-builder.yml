@@ -10,6 +10,15 @@ win:
       arch:
         - x64
 
+mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+  category: public.app-category.utilities
+  entitlementsInherit: build-resources/entitlements.mac.plist
+
 directories:
   buildResources: ./build-resources
 
