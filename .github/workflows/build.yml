@@ -1,0 +1,63 @@
+name: Build Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: '构建分支'
+        required: true
+        default: 'master'
+      version:
+        description: '版本号（如 1.1.0），会写入 package.json'
+        required: true
+        default: '1.1.0'
+      create_release:
+        description: '是否创建 GitHub Release'
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16'
+          cache: 'npm'
+
+      - name: Set version
+        run: npm version ${{ inputs.version }} --no-git-tag-version
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build & Package
+        run: npm run dist
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: double-mouse-downloader-${{ inputs.version }}-win
+          path: |
+            dist/*.exe
+            dist/*.7z
+          retention-days: 7
+
+      - name: Create Release
+        if: inputs.create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: v${{ inputs.version }}
+          draft: true
+          files: |
+            dist/*.exe
+            dist/*.7z

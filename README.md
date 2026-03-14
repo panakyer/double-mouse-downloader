@@ -4,17 +4,9 @@
 
 跨平台哔哩哔哩视频下载工具。
 
-## 下载
-
-[Releases](https://github.com/MoyuScript/double-mouse-downloader/releases)
-
-百度网盘：<https://pan.baidu.com/s/1-oBBpJbrykRohSmDjlbXxQ?pwd=NMSL>
-
 ## 支持操作系统
 
 - ✅ Windows 7/10/11 x64
-- Linux Desktop（开发中...）
-- MacOS（开发中... 其实是手头没 Mac 设备（悲））
 
 ## 特性
 
