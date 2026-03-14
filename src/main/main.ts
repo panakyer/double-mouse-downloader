@@ -57,7 +57,11 @@ async function main() {
   mainWindow.once('ready-to-show', () => mainWindow.show());
 
   if (process.env.NODE_ENV === 'development') {
-    await installExtension([REDUX_DEVTOOLS, REACT_DEVELOPER_TOOLS]);
+    try {
+      await installExtension([REDUX_DEVTOOLS, REACT_DEVELOPER_TOOLS]);
+    } catch (e) {
+      console.warn('DevTools extension installation failed:', e);
+    }
     mainWindow.once('show', () => mainWindow.webContents.openDevTools());
     // 开发环境加载开发服务器 URL
     await mainWindow.loadURL('http://localhost:3000/#/main');
