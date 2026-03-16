@@ -11,6 +11,10 @@ interface DownloadTaskVideoBase extends DownloadTaskBase {
   taskStatusMessage?: string;
   taskFileName: string;
   taskParentId: string;
+  taskDanmaku?: {
+    status: 'pending' | 'complete' | 'error';
+    message?: string;
+  };
 }
 
 export default DownloadTaskVideoBase;

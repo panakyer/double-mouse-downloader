@@ -3,6 +3,7 @@ import aria2Service from './services/aria2';
 import bilibiliService from './services/bilibili';
 import configService from './services/config-service';
 import contextMenuService from './services/context-menu';
+import danmakuService from './services/danmaku';
 import dialogService from './services/dialog';
 import githubService from './services/github';
 import shellService from './services/shell';
@@ -21,6 +22,7 @@ export const bridges = [
   aria2Service,
   pathService,
   ffmpegService,
+  danmakuService,
 ];
 
 export function initBridge() {

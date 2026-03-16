@@ -105,6 +105,9 @@ export async function downloadVideo(
       taskStatus: 'active',
       taskFileName: filename,
       taskId: crypto.randomUUID(),
+      ...(config.download.danmaku
+        ? { taskDanmaku: { status: 'pending' } }
+        : {}),
       taskVideo: {
         gid: '',
         uris: [videoDash.baseUrl, ...(videoDash.backupUrl || [])],
@@ -188,6 +191,28 @@ export async function mergeVideoIfCompleted(
       // 移除临时文件
       jsBridge.shell.rm(videoPath);
       jsBridge.shell.rm(audioPath);
+
+      // 下载并转换弹幕
+      if (newTask.taskDanmaku?.status === 'pending') {
+        const config = store.getState().config.data;
+        const cid = (task as any).cid as number;
+        const baseFileName = newTask.taskFileName.replace(/\.mp4$/i, '');
+        try {
+          await jsBridge.danmaku.downloadAndConvert(
+            cid,
+            videoAria.dir,
+            baseFileName,
+            config?.cookieString ?? ''
+          );
+          newTask.taskDanmaku = { status: 'complete' };
+        } catch (danmakuErr) {
+          console.error('弹幕下载失败', danmakuErr);
+          newTask.taskDanmaku = {
+            status: 'error',
+            message: (danmakuErr as Error).message,
+          };
+        }
+      }
 
       const noti = new Notification(`下载成功：${task.taskFileName}`, {
         body: '点击此处打开文件夹所在位置。',

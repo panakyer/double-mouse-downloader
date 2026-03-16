@@ -52,6 +52,11 @@ export function getStore() {
               description: '默认音频品质',
               default: AudioQuality.HIGH.id,
             },
+            danmaku: {
+              type: 'boolean',
+              description: '下载弹幕',
+              default: false,
+            },
           },
           // 这样写才会生成默认配置，下同
           default: {},

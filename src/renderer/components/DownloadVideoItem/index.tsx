@@ -122,6 +122,24 @@ const VideoPage: React.FC<{
           iconClassName="fa-solid fa-music"
         />
       </section>
+      {page.taskDanmaku && (
+        <p
+          aria-label="弹幕状态"
+          style={{ fontSize: '.85em', color: '#888', margin: '.2em 0 0' }}
+        >
+          弹幕：
+          {page.taskDanmaku.status === 'pending' && '下载中…'}
+          {page.taskDanmaku.status === 'complete' && (
+            <span style={{ color: '#52c41a' }}>已保存</span>
+          )}
+          {page.taskDanmaku.status === 'error' && (
+            <span style={{ color: 'red' }}>
+              下载失败
+              {page.taskDanmaku.message ? `：${page.taskDanmaku.message}` : ''}
+            </span>
+          )}
+        </p>
+      )}
     </li>
   );
 };

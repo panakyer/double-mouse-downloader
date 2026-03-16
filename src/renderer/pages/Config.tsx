@@ -291,6 +291,14 @@ const ConfigPage: React.FC<ConfigPageProps> = () => {
               />
             </Form.Item>
           </div>
+          <Form.Item
+            name="danmaku"
+            label="下载弹幕"
+            valuePropName="checked"
+            tooltip="开启后将同步下载 .xml 弹幕文件并转换为 .ass 字幕文件"
+          >
+            <Switch />
+          </Form.Item>
         </Form>
         <Form
           aria-label="代理设置"
